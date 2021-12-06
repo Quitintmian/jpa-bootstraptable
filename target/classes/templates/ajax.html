@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>ajax主页</title>
+        <!-- Bootstrap core CSS -->
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+    </head>
+    <body>
+        <div class="row" style="margin: 10px 10px 10px 35%;">
+            <a type="button" class="btn btn-primary btn-sm" href="add.html">新增</a>
+            <a type="button" class="btn btn-primary btn-sm" href="update.html">修改</a>
+            <label class="control-label" for="name"
+                   style="margin-top: 5px">查询学生姓名：</label>
+            <div class="col-xs-2">
+                <input type="text" class="form-control" id="name" placeholder="请输入学生姓名">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="query()"
+                    style="padding: 0 20px 0 20px;margin-left: 20px;border-radius: 20px">查询</button>
+            <div class="col-xs-2" style="margin-left: 10px">
+                <input type="text" class="form-control" id="id" placeholder="请输入要删除的id">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="deleteById()">删除</button>
+        </div>
+        <div id="studentInfo">
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>id</th>
+                    <th>姓名</th>
+                    <th>密码</th>
+                    <th>性别</th>
+                    <th>年龄</th>
+                </tr>
+                </thead>
+                <tbody id="studentTb">
+
+                </tbody>
+            </table>
+        </div>
+    </body>
+
+    <script>
+        $(function (){
+            $.ajax({
+                url: "http://localhost:8080/student/list",
+                method:'get',
+                success:function (data) {
+                    showTable(data)
+                }
+            })
+        })
+        query = function (){
+            $.ajax({
+                url: "http://localhost:8080/student/queryByName?name=" + $("#name").val(),
+                method:'get',
+                success:function (data){
+                    if (data == ''){
+                        $("#studentTb").html('')
+                    }else {
+                        showTable(data)
+                    }
+
+                }
+            })
+        }
+        showTable = function (data){
+            let html = ''
+            for (let i = 0; i < data.length; i++) {
+                let item = data[i]
+                let xinbie = item.sex === 1 ? '女' : '男'
+                html += "<tr>"
+                    + "<td>" + item.id + "</td>"
+                    + "<td>" + item.name + "</td>"
+                    + "<td>" + item.password + "</td>"
+                    + "<td>" + xinbie + "</td>"
+                    + "<td>" + item.age + "</td>"
+                    + "</tr>"
+                $("#studentTb").html(html)
+            }
+        }
+        deleteById = function (){
+            $.ajax({
+                url: "http://localhost:8080/student/delete/" + $("#id").val(),
+                method:'delete',
+                success:function (){
+                    alert("删除成功")
+                    window.location = "/"
+                }
+            })
+        }
+    </script>
+</html>

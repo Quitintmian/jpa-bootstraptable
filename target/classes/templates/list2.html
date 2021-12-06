@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>list</title>
+        <!-- Bootstrap core CSS -->
+        <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+        <link href="/css/bootstrap-table.min.css" rel="stylesheet">
+        <link href="/css/bootstrap.css" rel="stylesheet">
+        <script type="text/javascript" src="/js/bootstrap.js"></script>
+        <script type="text/javascript" src="/js/bootstrap-table.js"></script>
+        <script type="text/javascript" src="/js/bootstrap-table-zh-CN.min.js"></script>
+    </head>
+    <body>
+        <h2 style="text-align: center">学生表</h2>
+        <div class="row" style="margin-left: 40%">
+            <div class="col-xs-2">
+                <input type="text" class="form-control" id="name" placeholder="请输入学生姓名">
+            </div>&nbsp;
+            <button type="button" class="btn btn-primary" onclick="search()">搜索</button>
+        </div>
+        <button type="button" id="addStudent" class="btn btn-primary">新增学生</button>
+        <table class="table" id="mytable" border="1" style="width: auto;margin: 5px auto;table-layout:fixed;"></table>
+
+        <!-- 编辑 Modal -->
+        <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"></h4>
+                    </div>
+                    <div class="modal-body">
+                        <!--表单-->
+                        <form id="myform">
+                            <!--id 隐藏域-->
+                            <div class="form-group">
+                                <input type="hidden" class="form-control" id="id" name="id">
+                            </div>
+                            <div class="form-group">
+                                <label>姓名</label>
+                                <input type="text" class="form-control" id="editName" name="name">
+                            </div>
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="text" class="form-control" id="editPassword" name="password">
+                            </div>
+                            <div class="form-group">
+                                <label>性别</label>
+                                <select class="form-control" id="editSex" name="sex">
+                                    <option value="0">男</option>
+                                    <option value="1">女</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>年龄</label>
+                                <input type="text" class="form-control" id="editAge" name="age">
+                            </div>
+                        </form>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                            <button type="button" id="save" class="btn btn-primary">保存</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <script>
+
+        //初始化表格及分页
+        function initTable() {
+            $('#mytable').bootstrapTable('destroy');
+            $("#mytable").bootstrapTable({
+                url:"http://localhost:8080/test/query",
+                method:'post',//发送请求的方式
+                striped: true,//隔行变色
+                cache:false,
+                uniqueId: "id",
+                pagination:true,//开启分页,
+                clickToSelect:false,
+                cardView:false,
+                detailView: false,
+                pageNumber:1,//当前页数
+                pageSize:5,//每页条数
+                pageList:[5,10,15,20],
+                sidePagination:"server",
+                contentType:"application/x-www-form-urlencoded",
+                queryParams:queryParams,
+                columns: [{
+                        checkbox: true
+                    },
+                    {
+                        field: 'id',
+                        title: '序号',
+                        width:'10%',
+                        align:'center'
+                    },{
+                        field: 'name',
+                        title: '姓名',
+                        width:'20%',
+                        align:'center'
+                    },{
+                        field: 'password',
+                        title: '密码',
+                        width:'20%',
+                        align:'center'
+                    },{
+                        field: 'sex',
+                        title: '性别',
+                        align:'center',
+                        formatter:function(value, row, index){
+                            if("1"==value){
+                                return '女';
+                            }
+                            return '男';
+                        }
+                    },{
+                        field: 'age',
+                        title: '年龄',
+                        width:'20%',
+                        align:'center'
+                    },{
+                        title: '操作',
+                        formatter:formatProcess,
+                        align:'center'
+                    }]
+            })
+        }
+        function formatProcess(value,rows) {
+            return '<button class="btn btn-info btn-sm" onclick="editStu('+rows.id+')">编辑</button>' +
+                ' <button onclick="deleteStu('+rows.id+')" class="btn btn-danger btn-sm">删除</button>'
+        }
+
+
+        $(function (){
+            $('#save').click(function (){
+               $.post("http://localhost:8080/test/save",$("#myform").serialize(),function (msg){
+                   console.log(msg)
+               },"JSON")
+                $("#editModal").modal('hide')
+                $("#mytable").bootstrapTable("refresh");
+            })
+            $('#addStudent').click(function (){
+                $("#myModalLabel").text("新增学生")
+                $('#editModal').modal('show')
+                $("#id").val(0) // 若id为零表示为添加，在后台会判断
+            })
+        })
+
+        function editStu(studentId){
+            $("#myModalLabel").text("编辑学生")
+            $('#editModal').modal('show')
+            // 数据回显
+            $.ajax({
+                url:"http://localhost:8080/test/" + studentId,
+                method:"get",
+                success: function (data){
+                    $("#id").val(data.id)
+                    $("#editName").val(data.name)
+                    $("#editPassword").val(data.password)
+                    $("#editSex").val(data.sex)
+                    $("#editAge").val(data.age)
+                }
+            })
+        }
+
+        function deleteStu(studentId){
+            if (confirm("确定删除【id为"+studentId+"的学生吗?】")){
+                $.ajax({
+                    url:"http://localhost:8080/test/" + studentId,
+                    method: "delete" ,
+                    success: function (msg) {
+                        alert(msg)
+                        $("#mytable").bootstrapTable("refresh");
+                    }
+                })
+            }
+        }
+        //函数返回值作为查询参数
+        function queryParams(params) {
+
+            // 添加查询条件
+            return {
+                page:this.pageNumber,
+                rows:this.pageSize,
+                name: $('#name').val()
+            }
+        };
+        //条件查询
+        function search(){
+            $("#mytable").bootstrapTable("refresh",{'pageNumber':1});
+        }
+
+        //页面加载
+        $(function(){
+            initTable();
+        });
+    </script>
+</html>
+
+<style>
+    *{
+        font-family: "Microsoft YaHei UI Light",serif;
+    }
+</style>
